@@ -63,7 +63,6 @@ jobs:
     runs-on: "${{ format('ubuntu-24.04{0}', matrix.arch == 'arm64' && '-arm' || '') }}"
     container:
       image: 'ubuntu:${{ matrix.os_distro }}'
-      options: '--workdir ${{ github.workspace }}'
     steps:
       - name: Download the deb files
         uses: actions/download-artifact@v4
@@ -72,10 +71,9 @@ jobs:
           path: '.'
       - name: Install deb files
         run: |
-          mkdir ${{ env.DEB_DIR }}
-          (cd ${{ env.DEB_DIR }} && tar xf ../deb.tar.gz)
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends ${{ env.DEB_DIR }}/*.deb
+          tar xf ./deb.tar.gz
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ./*.deb
         env:
           DEBIAN_FRONTEND: 'noninteractive'
       - name: Display gazebo version
