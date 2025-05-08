@@ -72,8 +72,8 @@ jobs:
       - name: Install deb files
         run: |
           tar xf ./deb.tar.gz
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends ./*.deb
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ./*.deb
         env:
           DEBIAN_FRONTEND: 'noninteractive'
       - name: Display gazebo version
