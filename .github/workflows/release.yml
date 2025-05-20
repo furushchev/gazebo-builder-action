@@ -1,10 +1,9 @@
-name: Build
+name: Release
 
 on:
   push:
     branches:
       - main
-  pull_request:
   workflow_dispatch:
 
 env:
@@ -12,7 +11,7 @@ env:
   CCACHE_DIR: '${{ github.workspace }}/.ccache'
 
 jobs:
-  build:
+  release:
     strategy:
       matrix:
         os_distro: [jammy, noble]
@@ -46,35 +45,16 @@ jobs:
         run: |
           ls -lFah ${{ env.DEB_DIR }}/
           tar czf deb.tar.gz -C ${{ env.DEB_DIR }} .
-      - name: Upload deb files
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         if: ${{ always() && (steps.build.conclusion == 'success' || steps.build.conclusion == 'failure') }}
         with:
           name: 'deb-${{ matrix.os_distro }}-${{ matrix.arch }}'
           retention-days: 1
           path: deb.tar.gz
-
-  test:
-    needs: build
-    strategy:
-      matrix:
-        os_distro: [noble]
-        arch: [amd64, arm64]
-    runs-on: "${{ format('ubuntu-24.04{0}', matrix.arch == 'arm64' && '-arm' || '') }}"
-    container:
-      image: 'ubuntu:${{ matrix.os_distro }}'
-    steps:
-      - name: Download the deb files
-        uses: actions/download-artifact@v4
+      - name: Release deb files
+        uses: softprops/action-gh-release@v2
         with:
-          name: 'deb-${{ matrix.os_distro }}-${{ matrix.arch }}'
-          path: '.'
-      - name: Install deb files
-        run: |
-          tar xf ./deb.tar.gz
-          apt-get update -qq
-          apt-get install -y -qq --no-install-recommends ./*.deb
-        env:
-          DEBIAN_FRONTEND: 'noninteractive'
-      - name: Display gazebo version
-        run: gazebo --version | grep Gazebo
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: '${{ env.DEB_DIR }}/*.deb'
